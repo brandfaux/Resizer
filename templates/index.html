@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image and Signature Upload</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+        .dropzone {
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            padding: 80px;
+            text-align: center;
+            color: #007bff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .dropzone.dragover {
+            background-color: #e6f7ff;
+        }
+        #image-file, #signature-file {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Brand Faux Image Resizer</h1>
+        <form id="image-upload-form" action="/upload_image" method="post" enctype="multipart/form-data" class="text-center">
+            <div class="form-group">
+                <input type="file" name="file" id="image-file" class="form-control-file" accept=".jpg,.jpeg,.png,.gif" required>
+            </div>
+            <label for="image-file" class="dropzone" id="image-dropzone">
+                Drag and drop an image here or click to select a file
+            </label>
+        </form>
+
+        <form id="signature-upload-form" action="/upload_signature" method="post" enctype="multipart/form-data" class="text-center">
+            <div class="form-group">
+                <label for="signature-file">Select signature to upload:</label>
+                <input type="file" name="file" id="signature-file" class="form-control-file" accept=".jpg,.jpeg,.png,.gif" required>
+            </div>
+            <label for="signature-file" class="dropzone" id="signature-dropzone">
+                Drag and drop a signature here or click to select a file
+            </label>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info text-center">{{ messages|join(', ') }}</div>
+        {% endif %}
+        {% endwith %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var imageDropzone = document.getElementById('image-dropzone');
+            var imageFileInput = document.getElementById('image-file');
+            var imageUploadForm = document.getElementById('image-upload-form');
+
+            var signatureDropzone = document.getElementById('signature-dropzone');
+            var signatureFileInput = document.getElementById('signature-file');
+            var signatureUploadForm = document.getElementById('signature-upload-form');
+
+            function handleDropzoneClick(dropzone, fileInput) {
+                dropzone.addEventListener('click', function() {
+                    fileInput.click();
+                });
+            }
+
+            function handleDropzoneDragOver(dropzone) {
+                dropzone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+            }
+
+            function handleDropzoneDragLeave(dropzone) {
+                dropzone.addEventListener('dragleave', function() {
+                    dropzone.classList.remove('dragover');
+                });
+            }
+
+            function handleDropzoneDrop(dropzone, fileInput, form) {
+                dropzone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    var files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        fileInput.files = files;
+                        form.submit();
+                    }
+                });
+            }
+
+            function handleFileInputChange(fileInput, form) {
+                fileInput.addEventListener('change', function() {
+                    if (fileInput.files.length > 0) {
+                        form.submit();
+                    }
+                });
+            }
+
+            handleDropzoneClick(imageDropzone, imageFileInput);
+            handleDropzoneDragOver(imageDropzone);
+            handleDropzoneDragLeave(imageDropzone);
+            handleDropzoneDrop(imageDropzone, imageFileInput, imageUploadForm);
+            handleFileInputChange(imageFileInput, imageUploadForm);
+
+            handleDropzoneClick(signatureDropzone, signatureFileInput);
+            handleDropzoneDragOver(signatureDropzone);
+            handleDropzoneDragLeave(signatureDropzone);
+            handleDropzoneDrop(signatureDropzone, signatureFileInput, signatureUploadForm);
+            handleFileInputChange(signatureFileInput, signatureUploadForm);
+        });
+    </script>
+</body>
+</html>

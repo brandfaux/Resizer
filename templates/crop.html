@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cropping Tool</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .canvas-container {
+        position: relative;
+        width: calc(100% - 140px); /* Subtracting padding */
+        max-width: 800px;
+        height: calc(100vh - 140px); /* Subtracting padding */
+        padding: 70px;
+        box-sizing: border-box;
+        background-color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      canvas {
+        border: 1px solid #000;
+        max-width: 100%;
+        max-height: 100%;
+      }
+      .button-container {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      #continueButton {
+        background-color: #28a745;
+        color: white;
+      }
+      #resetButton {
+        background-color: #dc3545;
+        color: white;
+      }
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+</head>
+<body>
+
+<input type="hidden" id="filename" value="{{ filename }}">
+<input type="hidden" id="isSignature" value="{{ 'true' if signature else 'false' }}">
+<button id="continueButton" disabled>Continue</button>
+<button id="resetButton" disabled>Reset Selection</button>
+<div class="canvas-container" id="canvasContainer">
+    <!-- Canvas will be appended here dynamically -->
+</div>
+
+<script>
+    const filename = document.getElementById('filename').value;
+    const isSignature = document.getElementById('isSignature').value === 'true';
+    const continueButton = document.getElementById('continueButton');
+    const resetButton = document.getElementById('resetButton');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    let startX, startY, dragging = false;
+    let image = new Image();
+    let canvas, ctx;
+
+    window.onload = function() {
+        fetch(`/uploads/${filename}`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                image.src = url;
+                image.onload = () => {
+                    const containerWidth = canvasContainer.clientWidth;
+                    const containerHeight = canvasContainer.clientHeight;
+                    let imageWidth = image.width;
+                    let imageHeight = image.height;
+
+                    if (imageWidth > containerWidth || imageHeight > containerHeight) {
+                        const widthRatio = containerWidth / imageWidth;
+                        const heightRatio = containerHeight / imageHeight;
+                        const scale = Math.min(widthRatio, heightRatio);
+                        imageWidth *= scale;
+                        imageHeight *= scale;
+                    }
+
+                    canvas = document.createElement('canvas');
+                    ctx = canvas.getContext('2d');
+                    canvas.width = imageWidth;
+                    canvas.height = imageHeight;
+                    canvasContainer.innerHTML = ''; // Clear previous canvas if any
+                    canvasContainer.appendChild(canvas);
+                    ctx.drawImage(image, 0, 0, imageWidth, imageHeight);
+                    canvas.addEventListener('mousedown', handleMouseDown);
+                    canvas.addEventListener('mousemove', handleMouseMove);
+                    canvas.addEventListener('mouseup', handleMouseUp);
+                    resetButton.disabled = true; // Disable reset button initially
+                };
+            });
+    };
+
+    function handleMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        startX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        startY = (e.clientY - rect.top) * (canvas.height / rect.height);
+        dragging = true;
+    }
+
+    function handleMouseMove(e) {
+        if (dragging) {
+            const rect = canvas.getBoundingClientRect();
+            const endX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const endY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+        }
+    }
+
+    function handleMouseUp(e) {
+        dragging = false;
+        const rect = canvas.getBoundingClientRect();
+        const endX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const endY = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const width = endX - startX;
+        const height = endY - startY;
+        const croppedImageData = ctx.getImageData(startX, startY, width, height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = width;
+        canvas.height = height;
+        ctx.putImageData(croppedImageData, 0, 0);
+        continueButton.disabled = false;
+        resetButton.disabled = false;
+    }
+
+    continueButton.addEventListener('click', function () {
+        const croppedDataUrl = canvas.toDataURL('image/jpeg');
+        const targetSize = isSignature ? { width: 254, height: 64 } : { width: 160, height: 212 };
+        const maxSize = isSignature ? 50000 : 20000;
+
+        fetch('/resize_image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image: croppedDataUrl,
+                filename: filename,
+                target_size: [targetSize.width, targetSize.height],
+                max_size: maxSize
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/uploads/${data.filename}`;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    resetButton.addEventListener('click', function () {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        continueButton.disabled = true;
+        resetButton.disabled = true;
+    });
+</script>
+
+</body>
+</html>
