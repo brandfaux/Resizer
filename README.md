@@ -1,15 +1,15 @@
-# Image Resizer with Flask
+# <span style="color: #0074D9;">Image Resizer with Flask</span>
 
-## Description
+## <span style="color: #2ECC40;">Description</span>
 **Image Resizer with Flask** is a powerful web application built using Python Flask as the backend. It simplifies the process of resizing and compressing images, which is especially useful for scenarios like filling online forms where meeting specific image requirements can be cumbersome. With this application, users can effortlessly upload their images, crop them if necessary, and have them resized and compressed to meet standard specifications with just a few clicks.
 
-## Features
+## <span style="color: #FF4136;">Features</span>
 - **Image Upload**: Easily upload your images directly from your local system.
 - **Smart Cropping**: Use the built-in cropping tool to adjust your image precisely.
 - **Efficient Resizing**: Resize and compress images according to standard requirements.
 - **User-Friendly Interface**: Navigate and operate the application seamlessly.
 
-## Requirements
+## <span style="color: #FF851B;">Requirements</span>
 To run this application, you'll need the following:
 
 - **Python 3.12.0**: Ensure you have Python installed on your system.
@@ -18,7 +18,7 @@ To run this application, you'll need the following:
 - **OpenCV-Python**: For additional image manipulation capabilities.
 - **HTML/CSS Knowledge (Optional)**: Customize the frontend to your liking.
 
-## Installation
+## <span style="color: #B10DC9;">Installation</span>
 1. **Clone this Repository**: Download or clone this repository to your local machine.
 2. **Navigate to the Project Directory**: Open a terminal and go to the project folder.
 3. **Install Dependencies**: Run the following command to install the required dependencies:
@@ -31,7 +31,7 @@ To run this application, you'll need the following:
     ```
 5. **Access the Application**: Open your web browser and visit `http://localhost:5000` to use the application.
 
-## Usage
+## <span style="color: #FFDC00;">Usage</span>
 1. **Upload an Image**: Open the application in your web browser and click the "Upload Image" button to select an image file from your local system.
 2. **Crop (if Needed)**: Use the cropping tool to adjust the image as desired.
 3. **Resize and Compress**: Click the "Resize and Compress" button to process the image.
