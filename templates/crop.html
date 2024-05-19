@@ -49,18 +49,14 @@
         background-color: #dc3545;
         color: white;
       }
-      button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-      }
     </style>
 </head>
 <body>
 
 <input type="hidden" id="filename" value="{{ filename }}">
 <input type="hidden" id="isSignature" value="{{ 'true' if signature else 'false' }}">
-<button id="continueButton" disabled>Continue</button>
-<button id="resetButton" disabled>Reset Selection</button>
+<button id="continueButton">Continue</button>
+<button id="resetButton">Reset Selection</button>
 <div class="canvas-container" id="canvasContainer">
     <!-- Canvas will be appended here dynamically -->
 </div>
@@ -75,6 +71,7 @@
     let startX, startY, dragging = false;
     let image = new Image();
     let canvas, ctx;
+    let croppingDone = false; // Flag to track if cropping is done
 
     window.onload = function() {
         fetch(`/uploads/${filename}`)
@@ -106,12 +103,14 @@
                     canvas.addEventListener('mousedown', handleMouseDown);
                     canvas.addEventListener('mousemove', handleMouseMove);
                     canvas.addEventListener('mouseup', handleMouseUp);
-                    resetButton.disabled = true; // Disable reset button initially
                 };
             });
     };
 
     function handleMouseDown(e) {
+        if (croppingDone) {
+            resetSelection();
+        }
         const rect = canvas.getBoundingClientRect();
         startX = (e.clientX - rect.left) * (canvas.width / rect.width);
         startY = (e.clientY - rect.top) * (canvas.height / rect.height);
@@ -125,6 +124,8 @@
             const endY = (e.clientY - rect.top) * (canvas.height / rect.height);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'darkblue';
+            ctx.lineWidth = 2;
             ctx.strokeRect(startX, startY, endX - startX, endY - startY);
         }
     }
@@ -141,12 +142,19 @@
         canvas.width = width;
         canvas.height = height;
         ctx.putImageData(croppedImageData, 0, 0);
-        continueButton.disabled = false;
-        resetButton.disabled = false;
+        croppingDone = true; // Set flag to indicate cropping is done
+    }
+
+    function resetSelection() {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        croppingDone = false; // Reset the cropping flag
     }
 
     continueButton.addEventListener('click', function () {
-        const croppedDataUrl = canvas.toDataURL('image/jpeg');
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        
         const targetSize = isSignature ? { width: 254, height: 64 } : { width: 160, height: 212 };
         const maxSize = isSignature ? 50000 : 20000;
 
@@ -154,7 +162,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                image: croppedDataUrl,
+                image: dataUrl,
                 filename: filename,
                 target_size: [targetSize.width, targetSize.height],
                 max_size: maxSize
@@ -172,11 +180,7 @@
     });
 
     resetButton.addEventListener('click', function () {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        continueButton.disabled = true;
-        resetButton.disabled = true;
+        resetSelection();
     });
 </script>
 
